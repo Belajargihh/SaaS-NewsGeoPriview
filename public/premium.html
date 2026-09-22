@@ -192,8 +192,8 @@
             loadingOverlay.classList.add('active');
 
             try {
-                // A. Panggil Server Backend Lokal untuk dapat Token Midtrans
-                const response = await fetch('http://localhost:5000/api/create-transaction', {
+                // A. Panggil Server Backend untuk dapat Token Midtrans
+                const response = await fetch('/api/create-transaction', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

@@ -34,9 +34,12 @@ app.get("/", (req, res) => {
 });
 
 // ================================================
-// START SERVER
-// ================================================
+// START SERVER (Local Development)
 const port = process.env.PORT || 5000;
-app.listen(port, () => {
-    console.log(`🚀 Server Berjalan di http://localhost:${port}`);
-});
+if (!process.env.VERCEL) {
+    app.listen(port, () => {
+        console.log(`🚀 Server Berjalan di http://localhost:${port}`);
+    });
+}
+
+export default app;
