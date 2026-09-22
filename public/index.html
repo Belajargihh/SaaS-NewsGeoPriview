@@ -576,19 +576,23 @@
         // 3. FUNGSI UTILITY DATABASE (DEFAULT ROLE)
         // ==========================================
         async function ensureUserDocument(user, additionalData = {}) {
-            const userRef = doc(db, "users", user.uid);
-            const userSnap = await getDoc(userRef);
+            try {
+                const userRef = doc(db, "users", user.uid);
+                const userSnap = await getDoc(userRef);
 
-            // Jika dokumen belum ada (Pengguna Baru), buat dengan role 'pengguna'
-            if (!userSnap.exists()) {
-                await setDoc(userRef, {
-                    username: additionalData.username || user.displayName || "User",
-                    email: user.email,
-                    role: 'pengguna',
-                    createdAt: serverTimestamp(),
-                    photoURL: user.photoURL || null
-                });
-                console.log("New user document created with role: pengguna");
+                // Jika dokumen belum ada (Pengguna Baru), buat dengan role 'pengguna'
+                if (!userSnap.exists()) {
+                    await setDoc(userRef, {
+                        username: additionalData.username || user.displayName || "User",
+                        email: user.email,
+                        role: 'pengguna',
+                        createdAt: serverTimestamp(),
+                        photoURL: user.photoURL || null
+                    });
+                    console.log("New user document created with role: pengguna");
+                }
+            } catch (err) {
+                console.warn("Firestore user sync skipped:", err.message);
             }
         }
 

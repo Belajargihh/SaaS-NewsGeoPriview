@@ -1,8 +1,12 @@
 {
   "name": "newsgeo-simple",
   "version": "1.0.0",
-  "main": "app.js",
+  "main": "src/app.js",
   "type": "module",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node src/app.js"
+  },
   "dependencies": {
     "@langchain/core": "^1.0.6",
     "@langchain/google-genai": "^1.0.3",

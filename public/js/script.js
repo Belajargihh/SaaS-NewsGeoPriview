@@ -58,6 +58,91 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentHighlightIndex = 0;
   const itemsPerHighlightPage = 2;
 
+  // --- Toast Notification System ---
+  function showToast(message, type = 'info') {
+    // Remove existing toast if any
+    const existingToast = document.getElementById('custom-toast');
+    if (existingToast) existingToast.remove();
+
+    // Color schemes based on type
+    const colors = {
+      info: { bg: 'linear-gradient(135deg, #5b86a4 0%, #4ca1af 100%)', icon: 'fa-info-circle' },
+      warning: { bg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', icon: 'fa-exclamation-triangle' },
+      error: { bg: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', icon: 'fa-times-circle' },
+      success: { bg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', icon: 'fa-check-circle' }
+    };
+    const config = colors[type] || colors.info;
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.id = 'custom-toast';
+    toast.innerHTML = `
+      <div style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 24px;
+        background: ${config.bg};
+        color: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        animation: slideInToast 0.4s ease-out;
+        max-width: 350px;
+      ">
+        <i class="fas ${config.icon}" style="font-size: 18px;"></i>
+        <span>${message}</span>
+        <button onclick="this.parentElement.parentElement.remove()" style="
+          background: rgba(255,255,255,0.2);
+          border: none;
+          color: white;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-left: 8px;
+          font-size: 12px;
+        "><i class="fas fa-times"></i></button>
+      </div>
+    `;
+
+    // Add animation styles if not exists
+    if (!document.getElementById('toast-styles')) {
+      const style = document.createElement('style');
+      style.id = 'toast-styles';
+      style.innerHTML = `
+        @keyframes slideInToast {
+          from { opacity: 0; transform: translateX(100px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideOutToast {
+          from { opacity: 1; transform: translateX(0); }
+          to { opacity: 0; transform: translateX(100px); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    document.body.appendChild(toast);
+
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+      if (toast && toast.parentElement) {
+        toast.firstElementChild.style.animation = 'slideOutToast 0.3s ease-in forwards';
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, 4000);
+  }
+
   // --- Init Map ---
   try {
     map = L.map("map", { zoomControl: false }).setView([-2.5489, 118.0149], 5);
@@ -193,7 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
                               <span class="text-xs font-semibold text-red-500 bg-red-50 px-2 py-1 rounded-full inline-block">Terkini</span>
                               <span class="text-[10px] text-gray-400">${article.sumber}</span>
                           </div>
-                          <h4 class="font-bold text-gray-800 text-sm line-clamp-2 mb-1 leading-snug">${article.judul}</h4>
+                          <h4 class="font-bold text-gray-800 text-sm mb-1 leading-snug">${article.judul}</h4>
                       </div>
                       <div class="mt-3 text-xs text-blue-500 font-medium flex items-center">
                           Lihat Analisis 
@@ -230,19 +315,18 @@ document.addEventListener("DOMContentLoaded", () => {
     btnNextHighlight.disabled = currentHighlightIndex === maxIndex;
     btnPrevHighlightMobile.disabled = currentHighlightIndex === 0;
     btnNextHighlightMobile.disabled = currentHighlightIndex === maxIndex;
-    highlightPageIndicator.textContent = `Halaman ${
-      currentHighlightIndex + 1
-    } dari ${maxIndex + 1}`;
+    highlightPageIndicator.textContent = `Halaman ${currentHighlightIndex + 1
+      } dari ${maxIndex + 1}`;
   }
 
   async function handleSearch() {
     const query = searchQuery.value;
     if (!query) {
-      alert("Silakan masukkan topik pencarian.");
+      showToast("Silakan masukkan topik pencarian.", "warning");
       return;
     }
     if (searchCapacity <= 0) {
-      alert("Kapasitas pencarian harian Anda sudah habis.");
+      showToast("Kapasitas pencarian harian Anda sudah habis.", "error");
       return;
     }
 
@@ -321,7 +405,7 @@ document.addEventListener("DOMContentLoaded", () => {
       card.innerHTML = `
         <img src="${thumbnail}" class="w-24 h-20 object-cover rounded-lg mr-4 border">
         <div class="flex-grow">
-            <h4 class="font-bold text-lg text-gray-800 group-hover:text-blue-600 transition line-clamp-2">${article.judul}</h4>
+            <h4 class="font-bold text-lg text-gray-800 group-hover:text-blue-600 transition">${article.judul}</h4>
             <div class="flex items-center mt-2 text-sm text-gray-500">
                 <span class="font-medium text-blue-500 bg-blue-50 px-2 py-0.5 rounded text-xs">${article.sumber}</span>
                 <span class="mx-2">•</span>
@@ -423,12 +507,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
       if (data.error) throw new Error(data.error);
 
+      // Update title with full title from API if available
+      if (data.judul_berita && data.judul_berita !== "Detail Berita") {
+        modalTitle.textContent = data.judul_berita;
+      }
+
       modalLocationText.textContent =
         data.lokasi_kejadian || "Tidak terdeteksi";
       const formattedReview = data.ringkasan_interaktif
         ? data.ringkasan_interaktif.replace(/\n/g, "<br/>")
         : "Ringkasan tidak tersedia.";
-        reviewContent.innerHTML = `<p>${formattedReview}</p>`;
+      reviewContent.innerHTML = `<p>${formattedReview}</p>`;
       const images = await extractImagesFromURL(url);
 
       let imgHtml = "";
@@ -454,13 +543,11 @@ document.addEventListener("DOMContentLoaded", () => {
             `
                             <div class="text-center">
                                 <b class="text-sm block mb-1">Lokasi Kejadian</b>
-                                <span class="text-xs text-gray-600">${
-                                  data.lokasi_kejadian
-                                }</span>
+                                <span class="text-xs text-gray-600">${data.lokasi_kejadian
+            }</span>
                                 <br>
-                                <span class="text-xs font-bold">${
-                                  data.koordinat.nama_lengkap || ""
-                                }</span>
+                                <span class="text-xs font-bold">${data.koordinat.nama_lengkap || ""
+            }</span>
                             </div>
                           `
           )
