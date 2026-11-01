@@ -246,9 +246,14 @@
                     Platform API kami secara otomatis memetakan lokasi kejadian berita, membuat ringkasan NLP, dan melacak popularitas tren berita terkait.
                 </p>
                 
-                <div class="hero-actions flex flex-col md:flex-row gap-4 justify-center">
-                    <button class="primary-btn" id="hero-action-btn">
-                        Coba Gratis
+                <div class="hero-actions flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <a href="search.html" id="hero-guest-btn" class="primary-btn flex items-center justify-center gap-2">
+                        <i class="fas fa-play text-sm"></i>
+                        <span>Coba Tanpa Login</span>
+                    </a>
+                    <button class="secondary-btn flex items-center justify-center gap-2" id="hero-action-btn">
+                        <i class="fas fa-user-plus text-sm"></i>
+                        <span>Daftar Gratis</span>
                     </button>
                 </div>
             </div>
@@ -309,7 +314,10 @@
                             <li class="flex items-center"><span class="text-green-500 mr-3">&#10003;</span> Akses Peta Dasar</li>
                             <li class="flex items-center text-gray-400"><span class="text-red-500 mr-3">&#10005;</span> Analisis Tren</li>
                         </ul>
-                        <button class="w-full secondary-btn" onclick="document.getElementById('nav-register-btn').click()">Daftar Gratis</button>
+                        <div class="flex flex-col gap-3 mt-auto">
+                            <a href="search.html" class="w-full primary-btn text-center block">Coba Tanpa Login</a>
+                            <button class="w-full secondary-btn" onclick="document.getElementById('nav-register-btn').click()">Daftar Gratis</button>
+                        </div>
                     </div>
                     
                     <div class="pricing-card w-full max-w-md rounded-xl p-8 shadow-2xl relative flex flex-col" style="background-color: var(--dark); color: white;">
@@ -390,6 +398,11 @@
                     </button>
                 </div>
                 <div id="login-alert-message" class="text-center text-sm hidden mt-2 text-red-600"></div>
+                <div class="pt-3 border-t border-gray-100 text-center">
+                    <a href="search.html" class="text-xs text-gray-500 hover:text-blue-600 transition font-medium">
+                        Mau coba dulu? <span class="text-blue-600 font-semibold underline">Coba Tanpa Login &rarr;</span>
+                    </a>
+                </div>
             </form>
         </div>
     </div>
@@ -438,6 +451,11 @@
                     </button>
                 </div>
                 <div id="reg-alert-message" class="text-center text-sm hidden mt-2 text-red-600"></div>
+                <div class="pt-3 border-t border-gray-100 text-center">
+                    <a href="search.html" class="text-xs text-gray-500 hover:text-blue-600 transition font-medium">
+                        Mau coba dulu? <span class="text-blue-600 font-semibold underline">Coba Tanpa Login &rarr;</span>
+                    </a>
+                </div>
             </form>
         </div>
     </div>
@@ -488,8 +506,9 @@
         const loginModal = document.getElementById('login-modal');
         const registerModal = document.getElementById('register-modal');
 
-        // --- TOMBOL HERO (Tunggal) ---
+        // --- TOMBOL HERO ---
         const heroBtn = document.getElementById('hero-action-btn');
+        const heroGuestBtn = document.getElementById('hero-guest-btn');
 
         // ==========================================
         // 2. CEK SESI PENGGUNA (REALTIME)
@@ -525,7 +544,7 @@
             }
         });
 
-        // --- FUNGSI UPDATE UI (REVISI FINAL: SEARCH.HTML) ---
+        // --- FUNGSI UPDATE UI ---
         function updateUIState(isLoggedIn, name = '', email = '', role = 'pengguna') {
             if (isLoggedIn) {
                 // --- KONDISI: SUDAH LOGIN ---
@@ -535,9 +554,13 @@
                 profileDropdown.classList.remove('hidden');
                 setTimeout(() => profileDropdown.classList.remove('opacity-0'), 10);
 
-                // 2. Tombol Hero "Coba Gratis" -> Redirect ke search.html
+                // 2. Tombol Hero
+                if (heroGuestBtn) {
+                    heroGuestBtn.classList.add('hidden');
+                }
                 if (heroBtn) {
-                    heroBtn.textContent = 'Coba Gratis'; // Teks tetap
+                    heroBtn.className = 'primary-btn flex items-center justify-center gap-2';
+                    heroBtn.innerHTML = '<i class="fas fa-search text-sm"></i><span>Buka Dashboard</span>';
                     heroBtn.onclick = () => {
                         window.location.href = 'search.html';
                     };
@@ -562,9 +585,13 @@
                 setTimeout(() => authLinks.classList.remove('opacity-0'), 10);
                 profileDropdown.classList.add('hidden', 'opacity-0');
 
-                // 2. Tombol Hero "Coba Gratis" -> Buka Modal Register
+                // 2. Tombol Hero
+                if (heroGuestBtn) {
+                    heroGuestBtn.classList.remove('hidden');
+                }
                 if (heroBtn) {
-                    heroBtn.textContent = 'Coba Gratis'; // Teks tetap
+                    heroBtn.className = 'secondary-btn flex items-center justify-center gap-2';
+                    heroBtn.innerHTML = '<i class="fas fa-user-plus text-sm"></i><span>Daftar Gratis</span>';
                     heroBtn.onclick = () => {
                         if(registerModal) registerModal.classList.add('active');
                     };
@@ -773,6 +800,14 @@
                 if(e.target === modal) hideModal(modal);
             });
         });
+
+        // Buka modal otomatis jika ada query param atau hash
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('auth') === 'login' || window.location.hash === '#login') {
+            showModal(loginModal);
+        } else if (urlParams.get('auth') === 'register' || window.location.hash === '#register') {
+            showModal(registerModal);
+        }
 
         // Scroll Effect Header
         window.addEventListener('scroll', function () {
