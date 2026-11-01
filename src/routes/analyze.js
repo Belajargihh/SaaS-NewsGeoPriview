@@ -71,16 +71,27 @@ router.post("/analyze-url", async (req, res) => {
         2. TULIS ARTIKEL/RINGKASAN YANG PANJANG DAN MENDALAM (Minimal 3-4 Paragraf). Jelaskan kronologi, penyebab, dan dampak secara rinci.
         3. Cek validitas (hoaks/valid).`;
 
-        const analisis = await analysisChain.invoke({ input: teksAnalisis });
-        const geo = await hierarchicalGeocode(analisis.lokasi_kejadian);
+        let analisis = {};
+        if (modelSiap && analysisChain) {
+            try {
+                analisis = await analysisChain.invoke({ input: teksAnalisis });
+            } catch (aiErr) {
+                console.warn("AI invoke failed:", aiErr.message);
+            }
+        }
+
+        let geo = null;
+        if (analisis.lokasi_kejadian) {
+            geo = await hierarchicalGeocode(analisis.lokasi_kejadian);
+        }
 
         res.json({
-            judul_berita: title || "Detail Berita", // Use scraped title
-            lokasi_kejadian: analisis.lokasi_kejadian,
-            ringkasan_interaktif: analisis.ringkasan_interaktif,
-            status_validitas: analisis.status_validitas,
-            skor_kepercayaan: analisis.skor_kepercayaan,
-            analisis_hoaks: analisis.analisis_hoaks,
+            judul_berita: title || "Detail Berita",
+            lokasi_kejadian: analisis.lokasi_kejadian || "Lokasi belum terdeteksi",
+            ringkasan_interaktif: analisis.ringkasan_interaktif || (text ? text.slice(0, 500) : "Ringkasan berita belum tersedia."),
+            status_validitas: analisis.status_validitas || "Perlu Verifikasi",
+            skor_kepercayaan: analisis.skor_kepercayaan || 50,
+            analisis_hoaks: analisis.analisis_hoaks || "Analisis fakta otomatis.",
             koordinat: geo,
             gambar_pendukung: images
         });

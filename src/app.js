@@ -24,9 +24,11 @@ app.use(express.json());
 // Serve static files from public folder
 app.use(express.static(path.join(__dirname, "../public")));
 
-// Routes
+// Routes (Mount on both /api and / to support direct routing & rewrites on Vercel)
 app.use("/api", analyzeRoutes);
+app.use("/", analyzeRoutes);
 app.use("/api", paymentRoutes);
+app.use("/", paymentRoutes);
 
 // Root route
 app.get("/", (req, res) => {

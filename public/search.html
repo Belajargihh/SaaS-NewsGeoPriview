@@ -938,11 +938,44 @@
 
     // Search Logic
     async function handleSearch() {
-      const query = searchQuery.value;
-      if (!query) { showToast("Masukkan kata kunci.", "warning"); return; }
+      const query = (searchQuery.value || "").trim();
+      if (!query) { showToast("Masukkan kata kunci atau link berita.", "warning"); return; }
 
       if (!isUserPremium && searchCapacity <= 0) {
         showToast("Limit pencarian gratis habis. Silakan buat akun atau upgrade ke Premium.", "warning");
+        return;
+      }
+
+      // Deteksi jika input adalah URL link berita
+      const isUrl = /^https?:\/\//i.test(query);
+      if (isUrl) {
+        if (!isUserPremium) {
+          searchCapacity = Math.max(0, searchCapacity - 1);
+          sessionStorage.setItem("search_capacity", searchCapacity);
+          capacityNumber.textContent = searchCapacity;
+          if (searchCapacity === 0) {
+            showToast("Batas pencarian gratis telah tercapai.", "warning");
+          }
+        }
+        
+        searchResultsContainer.innerHTML = `
+          <div class="bg-white p-5 border border-blue-200 rounded-xl shadow-sm hover:shadow-md cursor-pointer transition flex items-center group article-card">
+              <div class="flex-grow">
+                  <h4 class="font-bold text-lg text-gray-800 group-hover:text-blue-600">${query}</h4>
+                  <div class="flex items-center mt-2 text-sm text-gray-500">
+                      <span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs font-medium">Link Berita</span>
+                      <span class="mx-2">•</span>
+                      <span>Klik untuk membuka hasil analisis</span>
+                  </div>
+              </div>
+          </div>
+        `;
+        const cardEl = searchResultsContainer.querySelector('.article-card');
+        if (cardEl) {
+          cardEl.addEventListener("click", () => handleArticleClick(query, "Analisis Berita dari URL"));
+        }
+        
+        handleArticleClick(query, "Analisis Berita dari URL");
         return;
       }
 
@@ -961,7 +994,10 @@
         mainLoader.style.display = "none";
         searchBtn.disabled = false; searchBtn.textContent = "Cari";
 
-        if (!response.ok) throw new Error("Gagal mengambil data");
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `Gagal mengambil data (Status: ${response.status})`);
+        }
         const data = await response.json();
         allArticles = data.artikel_terkait || [];
 
